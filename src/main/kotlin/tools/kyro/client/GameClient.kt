@@ -49,6 +49,7 @@ class GameClient<K>(): EventSender<K>() {
         } catch (e: Throwable) {
             this.client?.dispose()
             this.client = null
+            notifyOnError(e)
         }
     }
 

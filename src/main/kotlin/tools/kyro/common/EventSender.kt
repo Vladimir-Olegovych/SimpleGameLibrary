@@ -24,6 +24,14 @@ open class EventSender<K>() {
         }
     }
 
+    protected fun notifyOnError(e: Throwable) {
+        listeners.forEach {
+            lifecycleScope.launch(customDispatcher?: defaultDispatcher) {
+                it.onError(e)
+            }
+        }
+    }
+
     protected fun notifyOnDisconnected(connection: Connection) {
         listeners.forEach {
             lifecycleScope.launch(customDispatcher?: defaultDispatcher) {

@@ -1,5 +1,6 @@
 package tools.graphics
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Camera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
@@ -28,7 +29,7 @@ inline fun <T : Actor> T.setOnClickListener(crossinline action: () -> Unit): T =
     addListener(object : ClickListener() {
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             super.clicked(event, x, y)
-            action()
+            Gdx.app.postRunnable { action() }
         }
     })
 }

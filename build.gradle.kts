@@ -11,7 +11,6 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("reflect"))
     implementation(files("./libs/GameServerUtils.jar"))
     implementation(files("./libs/CommonUtils.jar"))
     api("com.badlogicgames.gdx:gdx:1.13.1")

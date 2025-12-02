@@ -4,10 +4,11 @@ import kotlinx.coroutines.*
 import java.util.concurrent.Executor
 
 abstract class LifecycleUpdater(
-    private var deltaTime: Float = DELTA_TIME
-): Executor {
+    private var deltaTime: Float = DELTA_TIME,
+    private var dispatcher: CoroutineDispatcher
+) {
 
-    protected val lifecycleScope = CoroutineScope(this.asCoroutineDispatcher())
+    protected val lifecycleScope = CoroutineScope(dispatcher)
 
     @Volatile private var step = (deltaTime * 1_000_000_000L).toLong()
     @Volatile private var lastTime = System.nanoTime()
@@ -51,10 +52,6 @@ abstract class LifecycleUpdater(
                 timeSinceLastUpdate -= step
             } while (timeSinceLastUpdate >= step)
         }
-    }
-
-    override fun execute(runnable: Runnable) {
-        runnable.run()
     }
 
     companion object {

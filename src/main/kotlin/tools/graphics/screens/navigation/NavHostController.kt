@@ -38,7 +38,7 @@ class NavHostController<D: Any>(private val game: Game) {
             navigationListener?.onNavigationSuccess(destination, fragment)
             currentFragment?.destroyFragment()
             currentFragment = fragment
-            fragment.onCreate(game)
+            fragment.onCreate()
             game.screen = fragment.screen
         } catch (e: Throwable) {
             game.screen = null

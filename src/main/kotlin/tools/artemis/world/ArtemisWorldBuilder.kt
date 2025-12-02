@@ -1,5 +1,6 @@
 package tools.artemis.world
 
+import alexey.tools.server.world.OptimizedInvocationStrategy
 import com.artemis.BaseSystem
 import com.artemis.World
 import com.artemis.WorldConfiguration
@@ -7,6 +8,7 @@ import com.artemis.WorldConfiguration
 class ArtemisWorldBuilder {
     private val systems = ArrayList<BaseSystem>()
     private val registeredObjects = ArrayList<Any>()
+    private val injectObjects = ArrayList<Any>()
 
     fun addObject(value: Any) = apply {
         this.registeredObjects.add(value)
@@ -14,6 +16,14 @@ class ArtemisWorldBuilder {
 
     fun addObjects(value: Array<*>) = apply {
         value.forEach {  this.registeredObjects.add(it as Any) }
+    }
+
+    fun addInject(value: Any) = apply {
+        this.injectObjects.add(value)
+    }
+
+    fun addInject(value: Array<*>) = apply {
+        value.forEach {  this.injectObjects.add(it as Any) }
     }
 
     fun addSystem(system: BaseSystem) = apply {
@@ -40,11 +50,18 @@ class ArtemisWorldBuilder {
         systems.forEach { system ->
             configuration.setSystem(system)
         }
-        val world = World(configuration)
+        configuration.isAlwaysDelayComponentRemoval = false
+        configuration.setInvocationStrategy(OptimizedInvocationStrategy())
+        val world = SafeWorld(configuration)
 
         registeredObjects.clear()
         systems.clear()
 
-        return world
+        try {
+            return world
+        } finally {
+            injectObjects.forEach { world.inject(it) }
+            injectObjects.clear()
+        }
     }
 }

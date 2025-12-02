@@ -1,34 +1,83 @@
 package tools.eventbus
 
 import tools.eventbus.annotation.BusEvent
+import tools.eventbus.annotation.EventType
+import java.lang.reflect.Method
+import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.reflect.KClass
 
 class EventBus {
 
-    private val handlers = ArrayList<Any>()
+    private val needProcessedEvents = ConcurrentLinkedQueue<Pair<Any, KClass<*>?>>()
+    private val handlers = mutableListOf<Any>()
+    private val handlerCache = mutableMapOf<Class<*>, List<MethodInfo>>()
 
-    fun registerHandler(obj: Any) = handlers.add(obj)
+    data class MethodInfo(
+        val method: Method,
+        val eventType: KClass<*>?,
+        val parameterType: Class<*>
+    )
 
-    fun removeHandler(obj: Any) = handlers.remove(obj)
-
-    fun clear() = handlers.clear()
-
-    fun sendEvent(event: Any): Boolean {
-        return findFunctionToSend(event)
+    fun process(){
+        needProcessedEvents.forEach { applyEvent(it.first, it.second) }
+        needProcessedEvents.clear()
     }
 
-    private fun findFunctionToSend(event: Any): Boolean {
+    fun registerHandler(obj: Any) {
+        handlers.add(obj)
+        cacheHandlerMethods(obj)
+    }
+
+    fun removeHandler(obj: Any) {
+        handlers.remove(obj)
+        handlerCache.remove(obj::class.java)
+    }
+
+    fun clear() {
+        handlers.clear()
+        handlerCache.clear()
+        needProcessedEvents.clear()
+    }
+
+    fun sendEvent(event: Any, customType: KClass<*>? = null) {
+        needProcessedEvents.add(Pair(event, customType))
+    }
+
+    private fun applyEvent(event: Any, customType: KClass<*>?) {
         for (handler in handlers) {
-            val methods = handler::class.java.methods
-            for (method in methods) {
-                if (method.isAnnotationPresent(BusEvent::class.java)) {
-                    val params = method.parameterTypes
-                    if (params.size == 1 && params[0] == event::class.java) {
-                        method.invoke(handler, event)
-                        return true
+            val methods = handlerCache[handler::class.java] ?: continue
+            for (methodInfo in methods) {
+                when {
+                    methodInfo.eventType != null -> {
+                        if (methodInfo.eventType == customType) {
+                            methodInfo.method.invoke(handler, event)
+                        }
+                    }
+                    methodInfo.parameterType == event::class.java -> {
+                        methodInfo.method.invoke(handler, event)
                     }
                 }
             }
         }
-        return false
+    }
+
+
+    private fun cacheHandlerMethods(handler: Any) {
+        val methods = handler::class.java.methods
+        val methodInfos = methods.mapNotNull { method ->
+            if (!method.isAnnotationPresent(BusEvent::class.java)) return@mapNotNull null
+
+            val typeAnnotation = method.getAnnotation(EventType::class.java)
+            val params = method.parameterTypes
+
+            if (params.size != 1) return@mapNotNull null
+
+            MethodInfo(
+                method = method,
+                eventType = typeAnnotation?.customType,
+                parameterType = params[0]
+            )
+        }
+        handlerCache[handler::class.java] = methodInfos
     }
 }

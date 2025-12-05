@@ -19,8 +19,12 @@ class EventBus {
     )
 
     fun process(){
-        needProcessedEvents.forEach { applyEvent(it.first, it.second) }
-        needProcessedEvents.clear()
+        val iterator = needProcessedEvents.iterator()
+        while (iterator.hasNext()) {
+            val pair = iterator.next()
+            applyEvent(pair.first, pair.second)
+            iterator.remove()
+        }
     }
 
     fun registerHandler(obj: Any) {

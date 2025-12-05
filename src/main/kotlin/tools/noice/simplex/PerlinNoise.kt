@@ -15,9 +15,9 @@ class PerlinNoise(private val seed: Long) {
 
     var contrast = 1.2F
     var octaves = 12
+    var gridSize = 300
     private val frequencies = (0 until octaves).map { 2f.pow(it) }.toList()
 
-    private val gridSize = 300
     private val scale = (max - min) / 2f
 
     fun noise2D(x: Float, y: Float): Float {
@@ -31,14 +31,11 @@ class PerlinNoise(private val seed: Long) {
         return noise2D(x.toFloat(), y.toFloat())
     }
 
-    fun noise2DVector(x: Float, y: Float): Vector2 {
-        val eps = 0.01f
-        val base = noise2D(x, y)
-        val dx = noise2D(x + eps, y) - base
-        val dy = noise2D(x, y + eps) - base
-
-        return Vector2(dx / eps, dy / eps)
+    fun noise2DScaled(x: Float, y: Float, scale: Float): Float {
+        return noise2D(x * scale, y * scale)
     }
+
+
 
     private fun perlin(x: Float, y: Float): Float {
         val x0 = x.toInt()
@@ -81,41 +78,5 @@ class PerlinNoise(private val seed: Long) {
     private val randomGradient = memoized<Int, Int, Vector2> { x, y ->
         val angle = Random(seed * (79701L * x + 49936L * y)).nextDouble(0.0, 2 * PI).toFloat() + angleOffset
         Vector2(sin(angle), cos(angle))
-    }
-
-    fun noise2DScaled(x: Float, y: Float, scale: Float): Float {
-        return noise2D(x * scale, y * scale)
-    }
-
-    fun noise2DOffset(x: Float, y: Float, offsetX: Float, offsetY: Float): Float {
-        return noise2D(x + offsetX, y + offsetY)
-    }
-
-    fun noise2DNormalized(x: Float, y: Float): Float {
-        val value = noise2D(x, y)
-        return (value - min) / (max - min)
-    }
-
-    fun noise2DOctaves(
-        x: Float,
-        y: Float,
-        octaves: Int = this.octaves,
-        persistence: Float = 0.5f,
-        lacunarity: Float = 2.0f
-    ): Float {
-        var frequency = 1.0f
-        var amplitude = 1.0f
-        var maxAmplitude = 0.0f
-        var noiseValue = 0.0f
-
-        repeat(octaves) {
-            noiseValue += perlin(x * frequency / gridSize, y * frequency / gridSize) * amplitude
-            maxAmplitude += amplitude
-            amplitude *= persistence
-            frequency *= lacunarity
-        }
-
-        noiseValue /= maxAmplitude
-        return min + ((noiseValue * contrast).coerceIn(-1F, 1F) + 1F) * scale
     }
 }

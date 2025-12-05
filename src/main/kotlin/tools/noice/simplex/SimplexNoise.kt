@@ -101,8 +101,8 @@ class SimplexNoise(private val seed: Long) {
         return 70f * (n0 + n1 + n2)
     }
 
-    fun noise2D(x: Float, y: Float, frequency: Float): Float {
-        return noise2D(x * frequency, y * frequency)
+    fun noise2DScaled(x: Float, y: Float, scale: Float): Float {
+        return noise2D(x * scale, y * scale)
     }
 
     companion object {

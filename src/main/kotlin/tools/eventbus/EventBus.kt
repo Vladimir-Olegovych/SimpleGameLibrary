@@ -43,6 +43,10 @@ class EventBus {
         needProcessedEvents.clear()
     }
 
+    fun sendEventNow(event: Any, customType: KClass<*>? = null){
+        applyEvent(event, customType)
+    }
+
     fun sendEvent(event: Any, customType: KClass<*>? = null) {
         needProcessedEvents.add(Pair(event, customType))
     }

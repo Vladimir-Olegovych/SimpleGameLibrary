@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
+import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 
 fun SpriteBatch.fillDraw(textureRegion: TextureRegion, camera: Camera) {
@@ -30,6 +31,15 @@ inline fun <T : Actor> T.setOnClickListener(crossinline action: () -> Unit): T =
         override fun clicked(event: InputEvent?, x: Float, y: Float) {
             super.clicked(event, x, y)
             Gdx.app.postRunnable { action() }
+        }
+    })
+}
+
+inline fun <T : Actor> T.setOnTouchDraggedListener(crossinline action: (x: Float, y: Float) -> Unit): T = apply {
+    addListener(object : InputListener() {
+        override fun touchDragged(event: InputEvent, x: Float, y: Float, pointer: Int) {
+            super.touchDragged(event, x, y, pointer)
+            Gdx.app.postRunnable { action(x, y) }
         }
     })
 }

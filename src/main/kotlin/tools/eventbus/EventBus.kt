@@ -3,13 +3,13 @@ package tools.eventbus
 import tools.eventbus.annotation.BusEvent
 import tools.eventbus.annotation.EventType
 import java.lang.reflect.Method
-import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.reflect.KClass
+import java.util.concurrent.CopyOnWriteArrayList
 
 class EventBus {
 
-    private val needProcessedEvents = ConcurrentLinkedQueue<Pair<Any, KClass<*>?>>()
-    private val handlers = mutableListOf<Any>()
+    private val needProcessedEvents = mutableListOf<Pair<Any, KClass<*>?>>()
+    private val handlers = CopyOnWriteArrayList<Any>()
     private val handlerCache = mutableMapOf<Class<*>, List<MethodInfo>>()
 
     data class MethodInfo(
@@ -18,7 +18,7 @@ class EventBus {
         val parameterType: Class<*>
     )
 
-    fun process(){
+    fun process() {
         val iterator = needProcessedEvents.iterator()
         while (iterator.hasNext()) {
             val pair = iterator.next()
@@ -43,12 +43,12 @@ class EventBus {
         needProcessedEvents.clear()
     }
 
-    fun sendEventNow(event: Any, customType: KClass<*>? = null){
+    fun sendEventNow(event: Any, customType: KClass<*>? = null) {
         applyEvent(event, customType)
     }
 
     fun sendEvent(event: Any, customType: KClass<*>? = null) {
-        needProcessedEvents.add(Pair(event, customType))
+        needProcessedEvents.add(event to customType)
     }
 
     private fun applyEvent(event: Any, customType: KClass<*>?) {
@@ -68,7 +68,6 @@ class EventBus {
             }
         }
     }
-
 
     private fun cacheHandlerMethods(handler: Any) {
         val methods = handler::class.java.methods

@@ -4,64 +4,48 @@ import alexey.tools.server.world.OptimizedInvocationStrategy
 import com.artemis.BaseSystem
 import com.artemis.World
 import com.artemis.WorldConfiguration
+import tools.di.ArtemisDI
+import tools.di.module.ArtemisModule
+import tools.di.module.WorldUpdater
 
 class ArtemisWorldBuilder {
+    private val artemisDI = ArtemisDI()
+    private val modules = ArrayList<ArtemisModule>()
     private val systems = ArrayList<BaseSystem>()
-    private val registeredObjects = ArrayList<Any>()
-    private val injectObjects = ArrayList<Any>()
 
-    fun addObject(value: Any) = apply {
-        this.registeredObjects.add(value)
+    fun addModules(vararg modules: ArtemisModule) = apply {
+        this.modules.addAll(modules)
     }
 
-    fun addObjects(value: Array<*>) = apply {
-        value.forEach {  this.registeredObjects.add(it as Any) }
-    }
-
-    fun addInject(value: Any) = apply {
-        this.injectObjects.add(value)
-    }
-
-    fun addInject(value: Array<*>) = apply {
-        value.forEach {  this.injectObjects.add(it as Any) }
-    }
-
-    fun addSystem(system: BaseSystem) = apply {
-        this.systems.add(system)
-    }
-
-    fun addSystems(systems: Array<BaseSystem>) = apply {
+    fun addSystems(vararg systems: BaseSystem) = apply {
         this.systems.addAll(systems)
-    }
-
-    fun removeObject(value: Any) = apply {
-        this.registeredObjects.remove(value)
-    }
-
-    fun removeSystem(system: BaseSystem) = apply {
-        this.systems.remove(system)
     }
 
     fun build(): World {
         val configuration = WorldConfiguration()
-        registeredObjects.forEach { registeredObject ->
-            configuration.register(registeredObject)
-        }
+
         systems.forEach { system ->
+            artemisDI.addInstance(system)
             configuration.setSystem(system)
         }
+
+        artemisDI.start(modules)
+        val instances = artemisDI.getAllInstances()
+        instances.forEach { (key, value) -> configuration.register(key, value) }
         configuration.isAlwaysDelayComponentRemoval = false
         configuration.setInvocationStrategy(OptimizedInvocationStrategy())
-        val world = SafeWorld(configuration)
+        val world = ArtemisWorld(configuration)
 
-        registeredObjects.clear()
+        for ((_, instance) in instances) {
+            if (instance is BaseSystem) continue
+            world.inject(instance)
+            if (instance is WorldUpdater) world.addUpdater(instance)
+        }
+
+        artemisDI.clear()
+        modules.clear()
         systems.clear()
 
-        try {
-            return world
-        } finally {
-            injectObjects.forEach { world.inject(it) }
-            injectObjects.clear()
-        }
+        return world
     }
 }

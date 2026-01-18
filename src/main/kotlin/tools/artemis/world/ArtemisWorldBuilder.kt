@@ -13,12 +13,25 @@ class ArtemisWorldBuilder {
     private val modules = ArrayList<ArtemisModule>()
     private val systems = ArrayList<BaseSystem>()
 
+    fun setArtemisDI(artemisDI: ArtemisDI) = apply {
+        artemisDI.getAllInstances().forEach {
+            this.artemisDI.addInstance(
+                customDataName = it.key,
+                instance = it.value
+            )
+        }
+    }
+
     fun addModules(vararg modules: ArtemisModule) = apply {
         this.modules.addAll(modules)
     }
 
     fun addSystems(vararg systems: BaseSystem) = apply {
         this.systems.addAll(systems)
+    }
+
+    fun addObject(value: Any, key: String? = null) = apply {
+        artemisDI.addInstance(value, key)
     }
 
     fun build(): World {

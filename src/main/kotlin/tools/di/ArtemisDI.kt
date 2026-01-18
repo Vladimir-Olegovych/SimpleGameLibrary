@@ -1,13 +1,16 @@
 package tools.di
 
+import com.artemis.annotations.Wire
 import tools.di.module.ArtemisModule
 import tools.di.module.annotations.DataName
 import tools.di.module.annotations.ProvideData
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
+import kotlin.reflect.KProperty1
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.functions
+import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 
 class ArtemisDI {
@@ -20,6 +23,24 @@ class ArtemisDI {
             registerModule(artemisModule)
         }
     }
+
+    fun inject(any: Any) {
+        val t = any.javaClass
+        for (declaredField in t.declaredFields) {
+            val annotation = runCatching {
+                declaredField.getDeclaredAnnotation(Wire::class.java)
+            }.getOrNull()
+            if (annotation == null) continue
+            try {
+                val instance = getInstance(annotation.name)
+                declaredField.isAccessible = true
+                declaredField.set(any, instance)
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
+        }
+    }
+
 
     fun addInstance(instance: Any, customDataName: String? = null){
         val dataName = if (customDataName == null) {

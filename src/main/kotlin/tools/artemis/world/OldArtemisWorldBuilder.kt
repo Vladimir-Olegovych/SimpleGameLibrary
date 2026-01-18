@@ -5,6 +5,7 @@ import com.artemis.BaseSystem
 import com.artemis.World
 import com.artemis.WorldConfiguration
 
+@Deprecated("Use ArtemisWorldBuilder")
 class OldArtemisWorldBuilder {
     private val systems = ArrayList<BaseSystem>()
     private val registeredObjects = ArrayList<Any>()
